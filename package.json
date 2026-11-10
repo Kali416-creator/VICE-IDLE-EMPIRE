@@ -1,0 +1,12 @@
+{
+  "name": "vice-idle-empire",
+  "version": "4.5.0",
+  "private": true,
+  "description": "VICE IDLE · Neon Empire — idle game de crimen neón (ficción). Build autocontenido de un solo HTML.",
+  "scripts": {
+    "build": "node tools/build.js",
+    "shots": "node tools/shots.js",
+    "test": "node tools/run-all.js",
+    "cloud:check": "node tools/check-cloud.js"
+  }
+}
