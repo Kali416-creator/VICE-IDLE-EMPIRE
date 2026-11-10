@@ -1,6 +1,7 @@
-# PROMPT DE CONTINUACIÓN — VICE IDLE (v4.5)
+# VICE IDLE · NEON EMPIRE (v4.6)
 
-> Copia desde aquí hacia abajo en una instancia nueva. El workspace ya existe en `/home/user/vice-idle`.
+> Este es a la vez el README del proyecto y el prompt de continuación.
+> El proyecto vive en la raíz de este repositorio (antes `/home/user/vice-idle`).
 
 ---
 
@@ -18,7 +19,7 @@ contratos Solidity, esquema SQL y batería de tests.
 
 ---
 
-## 2. Estado actual: v4.5 (todo verde)
+## 2. Estado actual: v4.6 (todo verde)
 
 | Versión | Qué se hizo |
 |---|---|
@@ -28,9 +29,11 @@ contratos Solidity, esquema SQL y batería de tests.
 | v4.1 | Inglés por defecto + portugués; presupuesto creciente por rango |
 | v4.3 | Reparto VIP **30 % reserva / 70 % tesorería**; planes **12 / 22 / 30 USDT** |
 | v4.4 | **Página de inicio de sesión** propia + cuentas locales (PBKDF2) · **eliminado todo rastro del backend gestionado** (sin SDK, sin esquema, sin Edge Functions) |
-| v4.5 | Conexión **opcional** con Supabase para registrar jugadores y balance (marcador) |
+| v4.5 | Conexión **opcional** para registrar jugadores y balance (marcador) |
+| v4.6 | **Backend propio** (sin rastro de Supabase en el juego) · **sección de Retiros** con rango mínimo y excepción VIP · tasa **1 000 000 G$ = 0.10 USDT** · sin detalle del reparto de ingresos en la UI |
 
-**Tests ahora mismo:** 163 tests de navegador (p2–p9) + 39 de contrato, todos en verde.
+**Tests ahora mismo:** 135 comprobaciones de navegador (playtest2–playtest5) + 32 del backend, todas en verde.
+Los playtests se ejecutan con un Chromium headless real (`node tools/playtestN.js`).
 
 ---
 
@@ -59,14 +62,15 @@ vice-idle/
 ├─ js/
 │  ├─ auth.js                página de login + cuentas locales (PBKDF2 120k)
 │  ├─ exchange.js            libro del Cambio + referidos (por jugador)
-│  ├─ cloud.js               puente opcional con Supabase (registro + balance)
+│  ├─ backend.js             cliente del backend (registro, balance, retiros)
 │  ├─ core.js                estado, ticks, presupuesto, guardado por jugador
 │  ├─ chain.js               MetaMask + ethers v6 (lazy): VIP y claim del swap
 │  ├─ ui.js                  render, modales, sonido, partículas
 │  └─ main.js                arranque: i18n → Auth.boot → partida → Cloud.start
-├─ supabase/
-│  ├─ schema.sql             players, player_visits, player_sync/get, vistas
-│  └─ README.md              guía de 1 minuto
+├─ backend/                  BACKEND del juego (marcador + retiros)
+│  ├─ src/server.js          API /v1/sync · /v1/player · /v1/leaderboard · /v1/withdraw
+│  ├─ src/db.js              Postgres (pg) o almacén en memoria
+│  └─ migrations/001_schema.sql  players, player_visits, vistas
 ├─ contracts/                Hardhat: ViceIdleVault, ViceSwapVault, 39 tests
 │  └─ scripts/               deploy.js · verify-flow.js · sign-voucher.js
 ├─ tools/                    build, simulador, playtests (2–9), shots, check-cloud
@@ -75,11 +79,14 @@ vice-idle/
 ```
 
 **Orden de scripts en `index.html`** (importa):
-`assets/inline.js → economy → data → i18n → core → auth → exchange → chain → cloud → ui → main`.
+`assets/inline.js → economy → data → i18n → core → auth → exchange → chain → backend → ui → main`.
 
 ---
 
 ## 5. Economía y constantes exactas
+
+**Retiros**: puerta por rango **🚗 Corredor (10⁹)**. Quien tiene un **VIP activo** no está sujeto a
+ese mínimo (`DATA.swap.vipSkipsRankGate`), en el cliente y en el backend.
 
 **Rangos** (sobre G$ ganados de por vida, `totalEarned`; nunca bajan):
 
@@ -101,14 +108,16 @@ al agotarse, goteo del **10 %** · reinicio 00:00 UTC · diaria y misiones **no*
 
 | Parámetro | Valor |
 |---|---|
-| Tasa época 1 | **2 000 000 000 G$ = 1 USDT** (recalibrable cada 14 días, paso máx. ±60 %) |
-| Mínimo por cambio | 0,10 USDT (= 200 000 000 G$) |
-| Cupo por jugador/día | **0,20 USDT** |
+| Tasa época 1 | **1 000 000 G$ = 0,10 USDT** (⟹ 10 000 000 G$ = 1 USDT) |
+| Recalibración | cada 14 días, paso máx. ±60 %, deriva acotada a ±25 % de la tasa de diseño |
+| Mínimo por retiro | 0,10 USDT (= 1 000 000 G$) |
+| Cupo por jugador/día | **0,20 USDT** (= 2 000 000 G$; 2 retiros mínimos) |
 | Presupuesto global/día | **25 USDT** |
-| Requisito | rango 🚗 Corredor (10⁹ ganados) |
+| Requisito | rango 🚗 Corredor (10⁹) **o VIP activo** |
 
 **VIP** (`DATA.VIP.plans`): 30 d = **12 USDT** (0,400/día) · 60 d = **22** (0,367) · 90 d = **30** (0,333).
-Reparto de cada pago: **30 % → reserva del swap** (`swapPoolBps 3000`) y **70 % → tesorería**, 0 % quema.
+El reparto de cada pago **no se muestra en la página** (vive solo en el contrato:
+`swapPoolBps 3000` / `treasuryBps 7000`).
 
 **Sostenibilidad**: `global_daily_cap_usdt ≤ 0,5 × 0,30 × ingresos VIP del mes / 30`
 ⟹ ≈ 209 / 228 / 250 pases VIP activos por mes según plan (≈ 418–438 con colchón del 50 %).
@@ -123,14 +132,12 @@ cd /home/user/vice-idle
 node tools/build.js          # regenera vice-idle.html (autocontenido)
 node tools/shots.js          # capturas en screenshots/ (login EN/ES/PT, juego, móvil)
 
-node tools/playtest2.js      # 18  reglas del juego
-node tools/playtest3.js      # 25  página de login y cuentas
-node tools/playtest4.js      # 24  Cambio local, vouchers y referidos
-node tools/playtest5.js      # 35  presupuesto por rango, puerta de rango, referidos
-node tools/playtest6.js      # 13  i18n (7 pestañas × 3 idiomas)
-node tools/playtest7.js      # 12  planes VIP y reparto 30/70
-node tools/playtest8.js      # 25  puente Supabase (proyecto simulado)
-node tools/playtest9.js      # 11  integración real cliente→HTTP→Postgres (si hay Postgres)
+node tools/playtest2.js      # 37  reglas del juego (clic, negocios, calor, presupuesto…)
+node tools/playtest3.js      # 31  página de login y cuentas locales (PBKDF2)
+node tools/playtest4.js      # 39  Cambio, vouchers y referidos cosméticos
+node tools/playtest5.js      # 28  sección de Retiros, rango mínimo y excepción VIP
+
+node backend/test/backend.test.js   # 32  API del backend (sync, retiros, topes)
 
 cd contracts && npx hardhat test    # 39 tests
 ```
@@ -173,31 +180,30 @@ cd contracts && RELAYER_PRIVATE_KEY=0x… node scripts/sign-voucher.js --player 
 
 ---
 
-## 8. Supabase (v4.5) — opcional, ya integrado
+## 8. Backend (v4.6) — integrado, opcional para el jugador
 
-Proyecto del usuario: **VICE IDLE EMPIRE**, ref `esvjifgxdlqwlklwcgde`
-(`https://esvjifgxdlqwlklwcgde.supabase.co`). **El agente no entra al dashboard** (no se usan
-contraseñas reales). El usuario hace 3 pasos:
+El juego **no contiene ninguna referencia a Supabase**: habla con **su propio backend**
+(`backend/`), que es el único que toca la base de datos. En el cliente solo hay una
+conexión (`.env.local` → `VICE_BACKEND_URL=.` y una clave pública) y la sección
+**⚙️ Ajustes → Base de datos y nube** para activarla, desactivarla o restaurar la partida.
 
-1. **SQL Editor** → pegar `supabase/schema.sql` → Run (idempotente).
-2. **Project Settings → API** → copiar *Project URL* + clave *anon public*.
-3. En el juego: **⚙️ Ajustes → ☁️ Base de datos y nube** → pegar → **Guardar conexión**.
+```bash
+node backend/src/server.js            # API en :8787 (memoria si no hay DATABASE_URL)
+cd backend && npm install && npm test # 32 tests de la API
+```
 
-| Objeto | Para qué |
+| Ruta | Para qué |
 |---|---|
-| `players` | `name`, `balance`, `total_earned`, `rank_index`, `vip_until`, `last_seen`, `sync_count` |
-| `player_visits` | cada ingreso (`register` / `login`) |
-| `player_sync()` / `player_get()` | `SECURITY DEFINER`; la tabla **no** es legible con la anon key |
-| `leaderboard`, `game_stats` | vistas de solo lectura |
+| `POST /v1/sync` | registra/actualiza `name`, `balance`, `total_earned`, `rank_index`, `vip_until` |
+| `GET /v1/player/:id` | fila del jugador (vincular dispositivos / restaurar) |
+| `GET /v1/leaderboard` | top del marcador |
+| `GET /v1/stats` | agregados |
+| `POST /v1/withdraw` | valida **rango o VIP** y cupos → devuelve el **voucher firmado** |
 
-Subida automática cada ~25 s si hay cambios, al salir y con *Subir ahora*;
-**Restaurar desde la nube** y **Vincular dispositivo** (pegar el ID) para otro equipo.
+`tools/serve.js` hace de proxy `/v1/*` → backend, así el navegador usa siempre el mismo origen.
 
-Verificación rápida: `node tools/check-cloud.js --url https://… --key "eyJ…"`.
-
-> **Límite conocido y aceptado:** es un **marcador**, no un libro contable. Con la clave pública
-> se puede inflar un balance; el dinero sigue protegido por el contrato (voucher + topes on-chain).
-> Cerrarlo requeriría una **Edge Function con Auth** que valide producción antes de escribir.
+> **Límite conocido y aceptado:** el marcador no es un libro contable. El dinero real sigue
+> protegido por el contrato (voucher firmado + topes on-chain).
 
 ---
 
@@ -220,13 +226,13 @@ Verificación rápida: `node tools/check-cloud.js --url https://… --key "eyJ�
 
 ## 10. Pendientes sugeridos (siguiente iteración)
 
-1. **Probar en el proyecto real** el esquema (los tests usan Postgres/simulación) y ajustar si Supabase limita algo.
-2. **Anti-cheat del balance**: Edge Function con Auth + validación de producción (sustituye `player_sync` público).
-3. **Ranking en el juego**: pestaña con `leaderboard` (ya existe la vista).
-4. **Recuperar cuenta en otro dispositivo** sin copiar UUID a mano (código de 6 caracteres tipo referido).
-5. **Auditoría externa** de contratos + multisig/timelock para admin y relayer antes de mainnet.
-6. **Contenido**: más negocios/misiones y eventos temporales, manteniendo el presupuesto diario.
-7. **Añadir idioma** = un objeto más en `src/i18n.js` (463 claves) sin tocar el resto.
+1. **Contratos Solidity** (`contracts/`): `ViceIdleVault` y `ViceSwapVault` con sus 39 tests.
+2. **Anti-cheat del balance**: validación de producción en el backend antes de aceptar un `sync`.
+3. **Recuperar cuenta en otro dispositivo** sin copiar el UUID a mano (código de 6 caracteres).
+4. **Auditoría externa** de contratos + multisig/timelock para admin y relayer antes de mainnet.
+5. **Contenido**: más negocios/misiones y eventos temporales, manteniendo el presupuesto diario.
+6. **Añadir idioma**: un objeto más en `src/i18n.js` (502 claves) sin tocar el resto.
+7. **Playtests p6–p9**: i18n por pestañas, planes VIP, backend y integración con Postgres.
 
 ---
 

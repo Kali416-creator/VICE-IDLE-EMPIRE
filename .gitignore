@@ -1,0 +1,27 @@
+# dependencias
+node_modules/
+package-lock.json
+
+# artefactos de contratos
+contracts/artifacts/
+contracts/cache/
+
+# tooling efímero del entorno de pruebas
+/tools-browser/
+/.local/
+/playwright*.tar.gz
+/tmp-*
+
+# capturas de depuración
+/screenshots/_*.png
+
+# SO / editor
+.DS_Store
+*.swp
+
+# conexión local (nunca se sube)
+.env.local
+.env
+
+# ejemplo de entorno (no contiene secretos)
+!.env.example

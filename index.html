@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0318">
+<meta name="description" content="VICE IDLE · Neon Empire — idle game de crimen neón. Ficción.">
+<title>VICE IDLE · Neon Empire</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="locked">
+
+<!-- ============================ LOGIN ============================ -->
+<div id="loginRoot" role="dialog" aria-modal="true">
+  <div class="login-shell">
+    <section class="login-hero">
+      <div class="login-brand">
+        <div class="mark">🌆</div>
+        <h1>VICE IDLE<span>NEON EMPIRE</span></h1>
+      </div>
+      <p class="tagline" data-i18n="app.tagline">Build the empire. Feel the heat. Cash out.</p>
+      <ul class="login-features">
+        <li data-i18n="login.feature1">10 businesses to grow</li>
+        <li data-i18n="login.feature2">Daily budget and police heat</li>
+        <li data-i18n="login.feature3">Scoreboard and accounts on the game backend</li>
+        <li data-i18n="login.feature4">G$ to USDT exchange at Capo tier</li>
+      </ul>
+      <div class="login-stats">
+        <span data-i18n="login.statLocal">Accounts are local</span>
+        <span data-i18n="login.statSecure">PBKDF2 120k rounds</span>
+        <span data-i18n="login.statOffline">Works offline</span>
+      </div>
+      <small data-i18n="app.fiction"></small>
+    </section>
+
+    <section class="login-card">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h2 id="loginTitle" data-i18n="login.title">Sign in to your empire</h2>
+        <div class="lang-switch" id="loginLang" role="group" aria-label="Language">
+          <button type="button" data-lang="en" class="active">EN</button>
+          <button type="button" data-lang="es">ES</button>
+          <button type="button" data-lang="pt">PT</button>
+        </div>
+      </div>
+      <p class="sub" data-i18n="login.subtitle">Local account, stored only in this browser.</p>
+
+      <div class="tabs" id="loginTabs" role="tablist">
+        <button type="button" role="tab" data-mode="login" class="active" data-i18n="login.tabLogin">Sign in</button>
+        <button type="button" role="tab" data-mode="register" data-i18n="login.tabRegister">Create account</button>
+        <button type="button" role="tab" data-mode="guest" data-i18n="login.tabGuest">Play as guest</button>
+      </div>
+
+      <form id="loginForm" autocomplete="on" novalidate>
+        <div class="field" data-guestsection="1">
+          <label for="loginUser" data-i18n="login.userLabel">Player name</label>
+          <input id="loginUser" class="input" name="username" type="text" maxlength="16"
+                 data-i18n-ph="login.userPh" placeholder="e.g. neon_king" autocomplete="username" spellcheck="false">
+        </div>
+        <div class="field" id="passField" style="margin-top:10px">
+          <label for="loginPass" data-i18n="login.passLabel">Password</label>
+          <input id="loginPass" class="input" name="password" type="password" maxlength="64"
+                 data-i18n-ph="login.passPh" placeholder="At least 6 characters" autocomplete="current-password">
+        </div>
+        <div class="field hidden" id="pass2Field" style="margin-top:10px">
+          <label for="loginPass2" data-i18n="login.pass2Label">Repeat password</label>
+          <input id="loginPass2" class="input" name="password2" type="password" maxlength="64"
+                 data-i18n-ph="login.pass2Ph" placeholder="Type it again" autocomplete="new-password">
+        </div>
+        <p id="loginMsg" class="login-msg" role="status" aria-live="polite"></p>
+        <button id="loginSubmit" class="btn btn-primary btn-block" type="submit" data-i18n="login.enter">Enter Vice City</button>
+        <div class="field" style="margin-top:10px">
+          <label class="setting-row" style="font-size:.8rem;text-transform:none;letter-spacing:0;color:var(--txt-dim)">
+            <span data-i18n="login.remember">Keep me signed in</span>
+            <span class="switch"><input id="loginRemember" type="checkbox" checked><span></span></span>
+          </label>
+        </div>
+      </form>
+      <p class="login-foot" data-i18n="login.footer">No servers, no tracking. Your account lives in this browser.</p>
+    </section>
+  </div>
+</div>
+
+<!-- ============================== APP ============================== -->
+<div id="app">
+  <header class="topbar">
+    <div class="brand"><span class="dot">🌆</span><span>VICE IDLE</span></div>
+    <span class="pill" id="rankPill">🐣 Novato</span>
+    <span class="pill vip hidden" id="vipPill">★ VIP</span>
+    <span class="pill guest hidden" id="guestPill">GUEST</span>
+    <span class="spacer"></span>
+    <div class="who">
+      <span class="name" id="whoName">—</span>
+      <span class="pill" id="cloudPill">☁ —</span>
+    </div>
+    <button class="btn btn-sm btn-ghost" id="btnSettings" data-i18n-title="set.title" title="Settings">⚙️</button>
+  </header>
+
+  <section class="hud" aria-live="off">
+    <div class="stat cash">
+      <div class="k" data-i18n="hud.cash">Cash</div>
+      <div class="v" id="hudCash">0</div>
+      <div class="s"><span id="hudTrickle" class="hidden">⤵ <span data-i18n="hud.trickle">Trickle</span></span></div>
+    </div>
+    <div class="stat income">
+      <div class="k" data-i18n="hud.income">Income</div>
+      <div class="v" id="hudIncome">0</div>
+      <div class="s" id="hudIncomeSub">per second</div>
+    </div>
+    <div class="stat heat" data-i18n-title="hud.heatTooltip">
+      <div class="k" data-i18n="hud.heat">Heat</div>
+      <div class="v" id="hudHeat">0%</div>
+      <div class="mini-bar heat-bar"><i id="heatBar"></i></div>
+    </div>
+    <div class="stat budget" data-i18n-title="hud.budgetTooltip">
+      <div class="k" data-i18n="hud.budget">Daily budget</div>
+      <div class="v" id="hudBudget">—</div>
+      <div class="mini-bar budget-bar"><i id="budgetBar"></i></div>
+    </div>
+    <div class="stat">
+      <div class="k" data-i18n="hud.rank">Rank</div>
+      <div class="v" id="hudRank">🐣</div>
+      <div class="mini-bar xp-bar"><i id="rankBar"></i></div>
+    </div>
+  </section>
+
+  <nav class="nav" id="nav" role="tablist">
+    <button type="button" data-tab="empire" class="active" data-i18n="nav.empire">Empire</button>
+    <button type="button" data-tab="upgrades" data-i18n="nav.upgrades">Upgrades</button>
+    <button type="button" data-tab="missions" data-i18n="nav.missions">Missions</button>
+    <button type="button" data-tab="withdraw" id="navWithdraw" data-i18n="nav.withdraw">Withdrawals</button>
+    <button type="button" data-tab="exchange" data-i18n="nav.exchange">Exchange</button>
+    <button type="button" data-tab="vip" data-i18n="nav.vip">VIP</button>
+    <button type="button" data-tab="ranking" data-i18n="nav.ranking">Ranking</button>
+    <button type="button" data-tab="profile" data-i18n="nav.profile">Profile</button>
+  </nav>
+
+  <main>
+    <!-- EMPIRE -->
+    <section class="tab-panel active" id="tab-empire">
+      <div class="section-head">
+        <h2 data-i18n="biz.title">Businesses</h2>
+        <p data-i18n="biz.subtitle">Every unit pays per second, forever.</p>
+        <span class="spacer"></span>
+        <button class="btn btn-sm btn-ghost" id="btnDaily">🎁 <span data-i18n="daily.claim">Claim daily</span></button>
+        <button class="btn btn-sm btn-ghost" id="btnPrestige">♻️ <span data-i18n="pre.title">Prestige</span></button>
+      </div>
+      <div class="empire-grid">
+        <div class="city-card" id="cityCard">
+          <div class="heat-glow" id="heatGlow"></div>
+          <canvas id="cityCanvas" width="360" height="220" aria-hidden="true"></canvas>
+          <div class="combo-chip" id="comboChip">x1.0</div>
+          <div class="event-chip hidden" id="eventChip">☔</div>
+          <div class="city-tap" id="tapZone" role="button" tabindex="0" aria-label="Tap">
+            <div class="tap-icon">🌆</div>
+            <div class="tap-label" id="tapLabel">+1</div>
+          </div>
+        </div>
+        <div>
+          <div class="biz-list" id="bizList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- UPGRADES -->
+    <section class="tab-panel" id="tab-upgrades">
+      <div class="section-head">
+        <h2 data-i18n="upg.title">Upgrades</h2>
+        <p data-i18n="upg.subtitle">One-time levels that multiply what you already own.</p>
+      </div>
+      <div class="cards" id="upgList"></div>
+    </section>
+
+    <!-- MISSIONS -->
+    <section class="tab-panel" id="tab-missions">
+      <div class="section-head">
+        <h2 data-i18n="mis.title">Daily missions</h2>
+        <p data-i18n="mis.subtitle">Three missions per day. They never touch your budget.</p>
+        <span class="spacer"></span>
+        <span class="pill" id="misReset">—</span>
+      </div>
+      <div class="mis" id="misList"></div>
+    </section>
+
+    <!-- WITHDRAWALS -->
+    <section class="tab-panel" id="tab-withdraw">
+      <div class="section-head">
+        <h2 data-i18n="wd.title">Withdrawals</h2>
+        <p data-i18n="wd.subtitle">Turn G$ into USDT. The contract pays, never the client.</p>
+        <span class="spacer"></span>
+        <span class="pill" id="wdGatePill">—</span>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <h3 data-i18n="wd.gateTitle">Withdrawal gate</h3>
+          <div id="wdGate"></div>
+        </div>
+        <div class="panel">
+          <h3 data-i18n="wd.method">Payout method</h3>
+          <div class="field">
+            <select class="input" id="wdMethod">
+              <option value="wallet" data-i18n="wd.methodWallet">Wallet (BEP-20)</option>
+              <option value="cloud" data-i18n="wd.methodCloud">Linked account</option>
+            </select>
+          </div>
+          <div class="notice" id="wdMethodNote" data-i18n="wd.walletHelp">The USDT arrives at the wallet that signs the claim.</div>
+          <div class="kv">
+            <span class="k" data-i18n="wd.fee">Network fee</span><span class="v" data-i18n="wd.feePaid">Paid by the vault</span>
+            <span class="k" data-i18n="wd.payout">Net payout</span><span class="v" id="wdNet">—</span>
+            <span class="k" data-i18n="sw.capPlayer">Your daily cap</span><span class="v" id="wdCap">—</span>
+          </div>
+          <button class="btn btn-cyan btn-block" id="wdGo" data-i18n="sw.request">Request exchange</button>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:14px">
+        <h3 data-i18n="wd.rules">Rules</h3>
+        <div class="kv" id="wdRules"></div>
+      </div>
+    </section>
+
+    <!-- EXCHANGE -->
+    <section class="tab-panel" id="tab-exchange">
+      <div class="section-head">
+        <h2 data-i18n="sw.title">Exchange G$ to USDT</h2>
+        <p data-i18n="sw.subtitle">Closed soft currency to real USDT (BEP-20) under strict caps.</p>
+      </div>
+      <div class="two-col">
+        <div class="panel" id="swPanel">
+          <div class="kv" id="swRates"></div>
+          <div class="notice" data-i18n="sw.warning">The client never decides a payment. Only the contract moves money.</div>
+          <div class="field">
+            <label for="swAmount" data-i18n="sw.amount">Amount in G$</label>
+            <input id="swAmount" class="input mono" type="text" inputmode="numeric" placeholder="200000000">
+          </div>
+          <div class="kv"><span class="k" data-i18n="sw.youGet">You get</span><span class="v" id="swQuote">—</span></div>
+          <button class="btn btn-primary btn-block" id="swRequest" data-i18n="sw.request">Request exchange</button>
+          <div id="swPending" class="hidden">
+            <div class="field">
+              <label for="swVoucher" data-i18n="sw.paste">Voucher JSON</label>
+              <textarea id="swVoucher" class="input" data-i18n-ph="sw.pastePh" placeholder='{"player":"0x..."}'></textarea>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn btn-cyan grow" id="swApply" data-i18n="sw.apply">Apply voucher</button>
+              <button class="btn btn-danger" id="swReject" data-i18n="sw.reject">Reject</button>
+            </div>
+            <button class="btn btn-primary btn-block" id="swClaim" style="margin-top:8px" data-i18n="sw.claim">Claim on chain</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3 data-i18n="sw.history">History</h3>
+          <div id="swHistory" class="muted" data-i18n="sw.empty">No exchanges yet.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIP -->
+    <section class="tab-panel" id="tab-vip">
+      <div class="section-head">
+        <h2 data-i18n="vip.title">VIP passes</h2>
+        <p data-i18n="vip.subtitle">More income, less heat, longer offline earnings.</p>
+        <span class="spacer"></span>
+        <span class="pill" id="vipStatus">—</span>
+      </div>
+      <div class="panel" style="margin-bottom:14px">
+        <div class="kv" style="grid-template-columns:repeat(2,auto)">
+          <span class="k">✅ <span data-i18n="vip.benefit1">Income x1.33</span></span>
+          <span class="k">🌡 <span data-i18n="vip.benefit2">Heat grows 35% slower</span></span>
+          <span class="k">🌙 <span data-i18n="vip.benefit3">Offline earnings up to 12h</span></span>
+          <span class="k">⭐ <span data-i18n="vip.benefit4">VIP badge in the ranking</span></span>
+        </div>
+        <div class="notice warn" data-i18n="vip.split">30% of every pass funds the exchange reserve, 70% goes to treasury.</div>
+      </div>
+      <div class="vip-plans" id="vipPlans"></div>
+    </section>
+
+    <!-- RANKING -->
+    <section class="tab-panel" id="tab-ranking">
+      <div class="section-head">
+        <h2 data-i18n="rank.title">Neon ranking</h2>
+        <p data-i18n="rank.subtitle">Optional cloud leaderboard. Sign in from Settings.</p>
+        <span class="spacer"></span>
+        <button class="btn btn-sm" id="btnRankRefresh" data-i18n="rank.refresh">Refresh</button>
+      </div>
+      <div class="panel">
+        <table class="tbl" id="rankTable">
+          <thead><tr>
+            <th data-i18n="rank.position">Pos</th>
+            <th data-i18n="rank.player">Player</th>
+            <th data-i18n="rank.level">Rank</th>
+            <th class="right" data-i18n="rank.balance">Balance</th>
+          </tr></thead>
+          <tbody id="rankBody"></tbody>
+        </table>
+        <div class="notice" data-i18n="rank.disclaimer"></div>
+      </div>
+    </section>
+
+    <!-- PROFILE -->
+    <section class="tab-panel" id="tab-profile">
+      <div class="section-head">
+        <h2 data-i18n="pro.title">Profile</h2>
+        <p data-i18n="pro.cosmetic">Cosmetics only. No economic effect.</p>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="kv" id="proStats"></div>
+          <h3 style="margin-top:6px" data-i18n="ach.title">Achievements</h3>
+          <div class="cards" id="achList"></div>
+        </div>
+        <div class="panel">
+          <h3 data-i18n="pro.titleLabel">Title</h3>
+          <div class="cards" id="cosTitles"></div>
+          <h3 data-i18n="pro.skin">Theme</h3>
+          <div class="cards" id="cosSkins"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-foot">
+    <span data-i18n="footer.fiction">Fiction. Not a real business, not an investment.</span>
+    <span class="spacer"></span>
+    <span id="footSave" data-i18n="footer.local">Local save</span>
+    <span id="footCloud">☁ <span data-i18n="footer.cloud">Cloud</span>: <b data-i18n="cloud.disconnected">Not connected</b></span>
+    <span id="footBackend"></span>
+    <span id="footBuild">build 4.5</span>
+  </footer>
+</div>
+
+<!-- ============================ MODAL ============================ -->
+<div class="modal-back" id="modalBack" hidden>
+  <div class="modal wide" id="modalBox" role="dialog" aria-modal="true">
+    <h3 id="modalTitle">— <button class="x" id="modalClose" aria-label="Close">×</button></h3>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<div id="toasts" aria-live="polite"></div>
+<div id="floaters" aria-hidden="true"></div>
+
+<!-- =========================== SCRIPTS ===========================
+     Orden importante:
+     assets/inline.js → economy → data → i18n → core → auth
+     → exchange → chain → backend → ui → main
+     (los módulos de juego no están envueltos en DOMContentLoaded)
+================================================================ -->
+<script src="assets/inline.js"></script>
+<script src="src/economy.js"></script>
+<script src="src/data.js"></script>
+<script src="src/i18n.js"></script>
+<script src="js/core.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/exchange.js"></script>
+<script src="js/chain.js"></script>
+<script src="js/backend.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

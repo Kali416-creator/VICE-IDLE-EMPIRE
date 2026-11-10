@@ -1,0 +1,17 @@
+{
+  "name": "vice-idle-backend",
+  "version": "4.6.0",
+  "private": true,
+  "description": "Backend del marcador de VICE IDLE · NEON EMPIRE (registro de jugadores y balance).",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node test/backend.test.js",
+    "migrate": "node src/migrate.js"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}
